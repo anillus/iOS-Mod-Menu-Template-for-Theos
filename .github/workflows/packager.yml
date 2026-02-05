@@ -1,40 +1,39 @@
-name: Build Critical Ops ESP
+name: Build iOS Tweak
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Depoyu Çek (Checkout)
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      - name: Setup Theos
+      - name: Theos Kurulumu
         run: |
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
+          echo "THEOS=~/theos" >> $GITHUB_ENV
 
-      - name: Setup iOS SDKs
+      - name: SDK İndir (iOS 26.0.1)
         run: |
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip master.zip
-          mkdir -p $HOME/theos/sdks
-          mv sdks-master/*.sdk $HOME/theos/sdks
-          rm -r master.zip sdks-master
+          mkdir -p ~/theos/sdks
+          mv sdks-master/iPhoneOS14.5.sdk ~/theos/sdks/
+          rm -r sdks-master master.zip
 
-      - name: Build Package
+      - name: Derle (Make Package)
         run: |
           make package FINALPACKAGE=1
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+          
+      - name: Dosyayı Yükle (Artifact)
+        uses: actions/upload-artifact@v3
         with:
-          name: CriticalOps_ESP_Deb
-          path: ./packages/*.deb
+          name: CriticalCheats_Dylib
+          path: packages/*.deb
