@@ -1,45 +1,40 @@
-name: Build Mod Menu iOS
+name: Build Critical Ops ESP
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "main", "master" ]
-  workflow_dispatch: # Bu satır sayesinde Actions sekmesinden manuel "Run" diyebilirsin.
+    branches:
+      - main
+      - master
 
 jobs:
   build:
-    runs-on: macos-latest # iOS derlemesi için Mac sunucusu şart
-
+    runs-on: macos-latest
     steps:
-      - name: Checkout Main
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive # KittyMemory gibi alt modülleri de indirir
+          submodules: recursive
 
-      - name: Install Theos
+      - name: Setup Theos
         run: |
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
-      - name: Download iOS SDK
+      - name: Setup iOS SDKs
         run: |
-          # iOS 14.5 SDK genelde en stabil olanıdır, onu indiriyoruz
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip master.zip
-          mkdir -p $THEOS/sdks
-          mv sdks-master/*.sdk $THEOS/sdks
+          mkdir -p $HOME/theos/sdks
+          mv sdks-master/*.sdk $HOME/theos/sdks
           rm -r master.zip sdks-master
 
-      - name: Setup Theos Jailed (Opsiyonel ama iyi olur)
+      - name: Build Package
         run: |
-          git clone https://github.com/kabiroberai/theos-jailed.git $THEOS/vendor/lib/theos-jailed
-
-      - name: Compile (Build)
-        run: |
-          # Hata verirse durmasın diye -k eklemiyorum ama loglara bakman lazım
           make package FINALPACKAGE=1
 
-      - name: Upload Artifact (.deb Dosyası)
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ModMenu_CriticalOps
+          name: CriticalOps_ESP_Deb
           path: ./packages/*.deb
