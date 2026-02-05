@@ -6,7 +6,7 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = CriticalCheats
 
 # Buraya kod dosyamızın adını yazıyoruz
-CriticalCheats_FILES = Tweak.xm
+CriticalCheats_FILES = Tweak.x
 CriticalCheats_CFLAGS = -fobjc-arc
 
 # Unity oyunları için gerekli frameworkler
