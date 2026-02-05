@@ -11,29 +11,29 @@ jobs:
     
     steps:
       - name: Depoyu Çek (Checkout)
-        uses: actions/checkout@v4  # Burayı da v4 yaptım, daha sağlıklı
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Theos Kurulumu
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/theos/theos/master/bin/install-theos)"
-          echo "THEOS=~/theos" >> $GITHUB_ENV
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       - name: SDK İndir (iOS 14.5)
         run: |
           curl -LO https://github.com/theos/sdks/archive/master.zip
           unzip master.zip
-          mkdir -p ~/theos/sdks
-          mv sdks-master/iPhoneOS14.5.sdk ~/theos/sdks/
+          mkdir -p $HOME/theos/sdks
+          mv sdks-master/iPhoneOS14.5.sdk $HOME/theos/sdks/
           rm -r sdks-master master.zip
 
       - name: Derle (Make Package)
         run: |
-          make package FINALPACKAGE=1
+          make package FINALPACKAGE=1 THEOS=$HOME/theos
           
       - name: Dosyayı Yükle (Artifact)
-        uses: actions/upload-artifact@v4  # İŞTE DÜZELTİLEN KISIM
+        uses: actions/upload-artifact@v4
         with:
           name: CriticalCheats_Dylib
           path: packages/*.deb
