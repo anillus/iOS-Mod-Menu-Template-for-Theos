@@ -1,87 +1,51 @@
-#import "Macros.h"
+#import <UIKit/UIKit.h>
+#import <substrate.h>
 #import <mach-o/dyld.h>
-#import <vector>
 
-// --- SENİN VERDİĞİN OFFSELER ---
-#define OFF_TYPINFO 0x46ed358  // typinfoAddr
-#define OFF_SYSTEM  0x30       // gameSystem offset
-#define OFF_LIST    0xD0       // characters list offset
-#define OFF_HEALTH  0x108      // Health offset
-#define OFF_POS     0x1694170  // Transform position
+// --- SENİN VERDİĞİN OFFSETLER ---
+// Bunları sabit (const) olarak tanımlıyoruz
+uint64_t OFFSET_WorldToViewportPoint = 0x1638dd4;
+uint64_t OFFSET_get_main = 0x163a384;
+uint64_t OFFSET_get_transform = 0x167f570;
+uint64_t OFFSET_get_position = 0x1694170;
+uint64_t OFFSET_getTeamIndex = 0x36adc0;
+uint64_t OFFSET_PlayerAdapter_ctor = 0x36b0e4;
+uint64_t OFFSET_get_LocalCharacter = 0x51e46c;
+uint64_t OFFSET_GetUsername = 0x77e684;
 
-// UnityFramework Base Adresini Bulma (getBase mantığı)
-uintptr_t get_UnityFramework() {
-    return (uintptr_t)_dyld_get_image_header(0);
+// --- YARDIMCI FONKSİYONLAR ---
+
+// Oyunun (UnityFramework) başlangıç adresini bulur
+uintptr_t get_base_address() {
+    return _dyld_get_image_vmaddr_slide(0); 
+    // Not: Genelde Unity oyunlarında framework indexi değişebilir, 
+    // ama 0 genellikle ana binary'dir. Bazen UnityFramework için isimle aramak gerekir.
 }
 
-// --- MENÜ KURULUMU ---
-void setupMenu() {
-    [menu setFrameworkName:"Anıl C-OPS v1"];
-
-    [switches addSwitch:NSSENCRYPT("ESP Aktif")
-        description:NSSENCRYPT("Düşmanları Gösterir")
-    ];
-    
-    [switches addSwitch:NSSENCRYPT("Can Göster")
-        description:NSSENCRYPT("Adamların canını gör")
-    ];
+// Offseti gerçek adrese çevirir
+uintptr_t get_real_address(uint64_t offset) {
+    return get_base_address() + offset;
 }
 
-// --- SENİN KOD MANTIĞIN ---
-void RunLogic() {
-    // Menüden ESP kapalıysa boşuna işlemciyi yorma
-    if(![switches isSwitchOn:NSSENCRYPT("ESP Aktif")]) return;
-
-    uintptr_t base = get_UnityFramework();
-    
-    // 1. ADIM: typinfoAddr
-    uintptr_t typInfoAddr = base + OFF_TYPINFO;
-    
-    // 2. ADIM: gameModuleInstance (Pointer okuma)
-    // Adres geçerli mi diye kontrol ediyoruz (Crash yememek için)
-    if(typInfoAddr == 0) return;
-    void* gameModuleInstance = *(void**)(typInfoAddr);
-    if(gameModuleInstance == NULL) return;
-    
-    // 3. ADIM: gameSystem (+0x30)
-    void* gameSystem = *(void**)((uint64_t)gameModuleInstance + OFF_SYSTEM);
-    if(gameSystem == NULL) return;
-    
-    // 4. ADIM: characters Listesi (+0xD0)
-    void* charactersList = *(void**)((uint64_t)gameSystem + OFF_LIST);
-    if(charactersList == NULL) return;
-    
-    // Liste boyutunu al (C# List yapısı: 0x18 size, 0x20 items)
-    int count = *(int*)((uint64_t)charactersList + 0x18);
-    uintptr_t items = (uintptr_t)charactersList + 0x20; 
-
-    // 5. ADIM: Döngü (Her adamı tek tek kontrol et)
-    for (int i = 0; i < count; i++) {
-        // Listeden karakteri çek
-        void* character = *(void**)(items + (i * 0x8));
-        if (!character) continue;
-        
-        // 6. ADIM: Can Değeri (+0x108)
-        int health = *(int*)((uint64_t)character + OFF_HEALTH);
-        
-        // Eğer canı 0'dan büyükse (Yaşıyorsa) işlem yap
-        if (health > 0 && health <= 100) {
-            // Burada ESP Çizimi yapılır.
-            // (Şimdilik mantık çalışıyor mu diye arka planda okuyoruz)
-        }
-    }
-}
-
-// --- HOOK (Oyunun Update fonksiyonuna kanca atıyoruz) ---
-%hook PlayerAdapter
-
-- (void)Update {
-    %orig;      // Oyunun orijinali çalışsın
-    RunLogic(); // Bizim hile çalışsın
-}
-
-%end
+// --- HOOK BAŞLANGICI ---
 
 %ctor {
-    setupMenu();
+    // Tweak yüklendiğinde çalışacak kod
+    NSLog(@"[CriticalCheats] Tweak injected!");
+    
+    // ÖRNEK: Eğer bir fonksiyona kanca atmak istersen MSHookFunction kullanılır.
+    // Şuan senin verdiğin kodlar sadece veri okuma (pointer chain).
+    // Bu verileri okumak için oyunun döngüsüne girmen lazım.
+    
+    // Senin verdiğin mantığın C++ karşılığı (sadece örnek, bunu bir döngüde çağırmalısın):
+    /*
+    uintptr_t unityBase = get_base_address(); // getBase("UnityFramework") yerine
+    uintptr_t typinfoAddr = unityBase + 0x46ed358;
+    
+    // Dikkat: Bu pointer okumaları oyun çalışırken yapılmazsa crash verir.
+    // void *gameModuleInstance = ... (Bunu bulman lazım);
+    
+    // auto gameSystem = *(void **)((uint64_t)gameModuleInstance + 0x30);
+    // auto characters = *(void **)((uint64_t)gameSystem + 0xD0);
+    */
 }
