@@ -1,0 +1,9 @@
+Package: com.anil.criticalcheats
+Name: CriticalCheats
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Critical Ops Offset Hook
+Maintainer: Anil
+Author: Anil
+Section: Tweaks
